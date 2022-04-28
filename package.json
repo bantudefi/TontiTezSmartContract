@@ -1,0 +1,20 @@
+{
+  "name": "kovamismartcontract",
+  "version": "1.0.0",
+  "description": "smart contract project",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "jane kelly",
+  "license": "ISC",
+  "dependencies": {
+    "@taquito/signer": "^12.0.0",
+    "@taquito/taquito": "^12.0.0",
+    "@taquito/tezbridge-signer": "^12.0.0",
+    "ejs": "^3.1.6",
+    "expressjs": "^1.0.1",
+    "https": "^1.0.0",
+    "serverless-http": "^2.7.0"
+  }
+}
