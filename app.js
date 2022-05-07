@@ -4,6 +4,8 @@ const { InMemorySigner } = require('@taquito/signer');
 const { TezBridgeSigner } = '@taquito/tezbridge-signer';
 const {TezosToolkit, MichelCodecPacker } = require('@taquito/taquito');
 
+var  swaggerJSDoc = require("swagger-jsdoc");
+var  swaggerUi = require("swagger-ui-express");
 const bodyParser = require('body-parser')
 const app = express()
 app.use(bodyParser.json());
@@ -29,22 +31,78 @@ tezos.setSignerProvider(InMemorySigner.fromFundraiser(acc.email, acc.password, a
 
 
 
+const swaggerDefinition = {
+  openapi: '3.0.0',
+  info: {
+    title: 'Express API for Tontine smart contract',
+    version: '1.0.0',
+    description:
+      'This is a REST API application made with Express. It retrieves data from Tontine smart contract.',
+    license: {
+      name: 'Licensed Under MIT',
+      url: 'https://spdx.org/licenses/MIT.html',
+    },
+    contact: {
+      name: 'JSONPlaceholder',
+      url: 'https://jsonplaceholder.typicode.com',
+    },
+  },
+  servers: [
+    {
+      url: 'http://localhost:3000',
+      description: 'Development server',
+    },
+  ],
+};
 
-// Tezos.contract
+const options = {
+  swaggerDefinition,
+  // Paths to files containing OpenAPI definitions
+  apis: ['./app.js'],
+};
+
+const swaggerSpec = swaggerJSDoc(options);
+
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+
+
 
   //*********************************Get Balance**************************************8 */
 
-  app.get('/getBalance', (req,res) => {
-    const address =req.body.address
-    const balance =req.body.balance
-    
-    tezos.tz
-    .getBalance(privateKey)
-    .then((balance) => res.send(`Public key balance is: ${balance.toNumber() / 1000000} ꜩ`))
-    .catch((error) => res.send(JSON.stringify(error)));
+  /**
+ * @swagger
+ * /Balance:
+ *   get:
+ *     summary: Tezos account balance
+ *     description: Retrieve tezos account balance
+ *     responses:
+ *       200:
+ *         description: Tezos Balance.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: string
+*/
+app.get('/Balance', (req,res) => {
+  tezos.tz
+  .getBalance(privateKey)
+  .then((balance) =>{
+    console.log(`Public key balance is: ${balance.toNumber() / 1000000} ꜩ`);
+    return res.send((balance.toNumber() / 1000000).toString());
+  })
+  .catch((error) => {
+    // console.log(`Error: ${JSON.stringify(error, null, 2)}`))
+    console.log(`Error: verify your infos`);
+    return res.status(400);
+    }) 
+  .finally(()=>{
+    res.end();
+  })
 
-    
 })
+
 
 
 
@@ -56,6 +114,48 @@ tezos.setSignerProvider(InMemorySigner.fromFundraiser(acc.email, acc.password, a
 
 
 //*********************************Add Assurer***************************************/
+
+  /**
+ * @swagger
+ * /addTontine:
+ *   post:
+ *     summary: Create a Tontine
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               balance:
+ *                  type: integer
+ *                  description: Set this to 0 as default (Tontine account balance)
+ *                  example: 0
+ *               descriptif:
+ *                  type: string
+ *                  description: Tontine account balance
+ *                  example: Finance Training Tontine
+ *               goal:
+ *                  type: integer
+ *                  description: Tontine Goal amount 
+ *                  example: 24
+ *               id:
+ *                  type: integer
+ *                  description: Tontine key
+ *                  example: 1
+ *               montantACotiser:
+ *                  type: integer
+ *                  description: Amount each member has to contribute to the account
+ *                  example: 8
+ *               nom:
+ *                  type: string
+ *                  description: Tontine Goal amount 
+ *                  example: Tech friends Tontine 
+ *               nombreParticipants:
+ *                  type: integer
+ *                  description: Number of participants
+ *                  example: 3
+*/
 app.post('/addTontine', (req,res) => {
   tezos.contract
     .at(contractKey)
@@ -90,6 +190,33 @@ app.post('/addTontine', (req,res) => {
 
   
 //*********************************Add Participant***************************************/
+
+
+/**
+ * @swagger
+ * /addParticipants:
+ *   post:
+ *     summary: Add a participant to a Tontine
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               rang:
+ *                  type: string
+ *                  description: Participant rang
+ *                  example: R1
+ *               id:
+ *                  type: integer
+ *                  description: Tontine key
+ *                  example: 1
+ *               publicKey:
+ *                  type: string
+ *                  description: public key of participants
+ *                  example: tz1M6x9Y4cAGWpmkJjrSopTLfTLAUVmCZhh4
+*/
 app.post('/addParticipants', (req,res) => {
   console.log("hey")
   tezos.contract
@@ -118,7 +245,38 @@ app.post('/addParticipants', (req,res) => {
   })
 
 
+
   //*********************************Add Cotisation***************************************/
+
+ /**
+ * @swagger
+ * /addCotisations:
+ *   post:
+ *     summary: Add a contribution to a Tontine
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               amount:
+ *                  type: integer
+ *                  description: Amount contributed to the Tontine 
+ *                  example: 8
+ *               id:
+ *                  type: integer
+ *                  description: Tontine key
+ *                  example: 1
+ *               publicKey:
+ *                  type: string
+ *                  description: public key used to contribute 
+ *                  example: tz1M6x9Y4cAGWpmkJjrSopTLfTLAUVmCZhh4
+ *               round:
+ *                  type: integer
+ *                  description: Tontine rounds
+ *                  example: 1
+*/ 
 app.post('/addCotisations', (req,res) => {
   console.log("hey")
   tezos.contract
@@ -152,42 +310,31 @@ app.post('/addCotisations', (req,res) => {
   })
 
 
-    //*********************************Add Cotisation***************************************/
-app.post('/addCotisations', (req,res) => {
-  console.log("hey")
-  tezos.contract
-    .at(contractKey)
-    .then((contract) => {
-      console.log("1")
-      const amount = req.body.amount
-      const date = new Date();
-      const id = req.body.id
-      const publicKey = req.body.publicKey
-      const round = req.body.round
-
-      var timestamp = date.getTime();
-
-      console.log("Adding a cotisation with credentials ");
-      console.log("Amount: "+ amount+" timestamp: "+ timestamp+ " id: "+id+" publicKey: "+publicKey+ " round: "+ round);
-      return contract.methods.addCotisations(amount, timestamp.toString(), id, publicKey, round).send();
-    })
-    .then((op) => {
-      console.log(`Awaiting for ${op.hash} to be confirmed...`);
-      return res.send(op.hash);
-    })
-  
-.catch((error) => {
-          console.log(`Error: verify your infos`);
-          return res.status(400);
-          })      .finally(()=>{
-      res.end();
-    })
-  
-  })
 
 
 
-      //*********************************Demand withdraw***************************************/
+//*********************************Demand withdraw***************************************/
+ /**
+ * @swagger
+ * /DemandeRetrait:
+ *   post:
+ *     summary: demand a withdraw from a Tontine
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id:
+ *                  type: integer
+ *                  description: Tontine key
+ *                  example: 1
+ *               publicKey:
+ *                  type: string
+ *                  description: public key used to contribute 
+ *                  example: tz1M6x9Y4cAGWpmkJjrSopTLfTLAUVmCZhh4
+*/ 
 app.post('/DemandeRetrait', (req,res) => {
   console.log("hey")
   tezos.contract
@@ -221,6 +368,28 @@ app.post('/DemandeRetrait', (req,res) => {
 
 
 //Transfer Tez to participants after withdraw demand
+
+ /**
+ * @swagger
+ * /transfer:
+ *   post:
+ *     summary: Tranfer Tez to a participant after withdraw demand
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               amount:
+ *                  type: integer
+ *                  description: Amount to be transferred
+ *                  example: 24
+ *               address:
+ *                  type: string
+ *                  description: Participant's publickey 
+ *                  example: tz1M6x9Y4cAGWpmkJjrSopTLfTLAUVmCZhh4
+*/ 
 app.post('/transfer', (req,res) => {
   const amount = req.body.amount;
   const address = req.body.address;
@@ -238,14 +407,6 @@ tezos.contract
 
 }
 )
-
-
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////
-    ////                           ALL GET FUNCTIONS FOR THE SMART CONTRACT                          ////   
-    //////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 
 
 
